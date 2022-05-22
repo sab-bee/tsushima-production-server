@@ -72,9 +72,27 @@ async function run() {
     // post order
     app.post('/item', verifyJWT, async (req, res) => {
       const item = req.body
-      console.log(item)
       const result = await orderCollection.insertOne(item)
       res.send(result)
+      // res.send({ success: true })
+    })
+
+    // modify parts quntity
+    app.patch('/part', verifyJWT, async (req, res) => {
+      const id = req.query.id
+      const filter = { _id: ObjectId(id) }
+      const updateQuantity = req.body
+      const updateDoc = {
+        $set: updateQuantity,
+      }
+      const result = await partsCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+    // my orders...all the order from a particular user
+    app.get('/item', verifyJWT, async (req, res) => {
+      const query = req.query.email
+      console.log(query)
     })
   } finally {
   }
