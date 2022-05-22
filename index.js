@@ -91,8 +91,20 @@ async function run() {
 
     // my orders...all the order from a particular user
     app.get('/item', verifyJWT, async (req, res) => {
-      const query = req.query.email
-      console.log(query)
+      const email = req.query.email
+      const query = { userEmail: email }
+      const result = await orderCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    // cancel order if unpaid
+    app.delete('/item', verifyJWT, async (req, res) => {
+      const id = req.query.id
+      console.log(id)
+      const query = { _id: ObjectId(id) }
+
+      const result = await orderCollection.deleteOne(query)
+      res.send(result)
     })
   } finally {
   }
