@@ -33,6 +33,10 @@ async function run() {
       const result = await partsCollection.find(query).toArray()
       res.send(result)
     })
+
+    app.get('/test', async (req, res) => {
+      res.send({ hello: 'world' })
+    })
   } finally {
   }
 }
