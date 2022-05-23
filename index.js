@@ -68,7 +68,7 @@ async function run() {
       const paymentInfo = req.body
       console.log(query)
       console.log('paymentInfo :>> ', paymentInfo)
-      /* const updateDoc = {
+      const updateDoc = {
         $set: {
           paid: true,
           transactionId: paymentInfo.transactionId,
@@ -77,7 +77,15 @@ async function run() {
       const patchResult = await orderCollection.updateOne(query, updateDoc)
       const result = await paymentCollection.insertOne(paymentInfo)
 
-      res.send(updateDoc) */
+      res.send(updateDoc)
+    })
+
+    // get payment detail after payment is done
+    app.get('/payment/:id', verifyJWT, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: ObjectId(id) }
+      const result = await paymentCollection.findOne(query)
+      res.send(result)
     })
 
     // generate jwt after user logged in
