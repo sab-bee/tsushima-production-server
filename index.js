@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const jwt = require('jsonwebtoken')
 require('dotenv').config()
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -45,6 +46,18 @@ async function run() {
       .db('tsushimaCorporation')
       .collection('orders')
 
+    //stripe payment
+
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const totalPrice = req.body.totalPrice
+      const amount = totalPrice * 100
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card'],
+      })
+      res.send({ clientSecret: paymentIntent.client_secret })
+    })
     // generate jwt after user logged in
     app.get('/account/:email', async (req, res) => {
       const email = req.params
@@ -70,7 +83,7 @@ async function run() {
     })
 
     // post order
-    app.post('/item', verifyJWT, async (req, res) => {
+    app.post('/order', verifyJWT, async (req, res) => {
       const item = req.body
       const result = await orderCollection.insertOne(item)
       res.send(result)
@@ -90,7 +103,7 @@ async function run() {
     })
 
     // my orders...all the order from a particular user
-    app.get('/item', verifyJWT, async (req, res) => {
+    app.get('/order', verifyJWT, async (req, res) => {
       const email = req.query.email
       const query = { userEmail: email }
       const result = await orderCollection.find(query).toArray()
@@ -98,13 +111,21 @@ async function run() {
     })
 
     // cancel order if unpaid
-    app.delete('/item', verifyJWT, async (req, res) => {
+    app.delete('/order', verifyJWT, async (req, res) => {
       const id = req.query.id
       console.log(id)
       const query = { _id: ObjectId(id) }
 
       const result = await orderCollection.deleteOne(query)
       res.send(result)
+    })
+
+    // get specific order from a particular user
+    app.get('/order/:id', verifyJWT, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: ObjectId(id) }
+      const order = await orderCollection.findOne(query)
+      res.send(order)
     })
   } finally {
   }
