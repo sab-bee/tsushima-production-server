@@ -24,6 +24,7 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 })
 
+// middleware
 function verifyJWT(req, res, next) {
   const auth = req.headers.authorization
   if (!auth) return res.status(401).send({ message: 'unauthorized access' })
@@ -37,6 +38,7 @@ function verifyJWT(req, res, next) {
   })
 }
 
+// rest api
 async function run() {
   try {
     await client.connect()
@@ -48,6 +50,15 @@ async function run() {
     const paymentCollection = client
       .db('tsushimaCorporation')
       .collection('payments')
+    const userCollection = client.db('tsushimaCorporation').collection('users')
+
+    //verify admin
+    async function verifyAdmin(req, res, next) {
+      const userEmail = req.decoded.email
+      const userInfo = await userCollection.findOne({ email: userEmail })
+      if (userInfo.admin) next()
+      else res.status(403).send({ message: 'forbidden access' })
+    }
 
     //stripe payment get payment secret
     app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -80,20 +91,20 @@ async function run() {
       res.send(updateDoc)
     })
 
-    // get payment detail after payment is done
-    app.get('/payment/:id', verifyJWT, async (req, res) => {
-      const id = req.params.id
-      const query = { _id: ObjectId(id) }
-      const result = await paymentCollection.findOne(query)
-      res.send(result)
-    })
+    // generate jwt and add user to db after user logged in
+    app.post('/account/:email', async (req, res) => {
+      const email = req.params.email
+      const name = req.body.name
 
-    // generate jwt after user logged in
-    app.get('/account/:email', async (req, res) => {
-      const email = req.params
       const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, {
         expiresIn: '1h',
       })
+      const userInfo = { email: email, name: name, admin: false }
+
+      const user = await userCollection.findOne({ email: email })
+      if (!user) {
+        await userCollection.insertOne(userInfo)
+      }
       res.send({ token })
     })
 
@@ -156,6 +167,26 @@ async function run() {
       const query = { _id: ObjectId(id) }
       const order = await orderCollection.findOne(query)
       res.send(order)
+    })
+
+    // get all logged in users from the data base
+    app.get('/user', verifyJWT, async (req, res) => {
+      const result = await userCollection.find({}).toArray()
+      res.send(result)
+    })
+
+    // handle admin
+    app.patch('/user', verifyJWT, verifyAdmin, async (req, res) => {
+      const email = req.query
+      const updateDoc = {
+        $set: { admin: true },
+      }
+      const result = await userCollection.updateOne(email, updateDoc)
+      res.send(result)
+    })
+
+    app.get('/admin', verifyJWT, verifyAdmin, async (req, res) => {
+      res.send({ admin: true })
     })
   } finally {
   }
