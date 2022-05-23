@@ -185,8 +185,11 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/admin', verifyJWT, verifyAdmin, async (req, res) => {
-      res.send({ admin: true })
+    app.get('/admin', verifyJWT, async (req, res) => {
+      const email = req.query
+      console.log(email)
+      const user = await userCollection.findOne(email)
+      res.send({ admin: user?.admin })
     })
   } finally {
   }
