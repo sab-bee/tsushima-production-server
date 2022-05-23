@@ -45,9 +45,11 @@ async function run() {
     const orderCollection = client
       .db('tsushimaCorporation')
       .collection('orders')
+    const paymentCollection = client
+      .db('tsushimaCorporation')
+      .collection('payments')
 
-    //stripe payment
-
+    //stripe payment get payment secret
     app.post('/create-payment-intent', verifyJWT, async (req, res) => {
       const totalPrice = req.body.totalPrice
       const amount = totalPrice * 100
@@ -58,6 +60,26 @@ async function run() {
       })
       res.send({ clientSecret: paymentIntent.client_secret })
     })
+
+    // update paid status after payment
+    app.patch('/order', verifyJWT, async (req, res) => {
+      const id = req.query.id
+      const query = { _id: ObjectId(id) }
+      const paymentInfo = req.body
+      console.log(query)
+      console.log('paymentInfo :>> ', paymentInfo)
+      /* const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: paymentInfo.transactionId,
+        },
+      }
+      const patchResult = await orderCollection.updateOne(query, updateDoc)
+      const result = await paymentCollection.insertOne(paymentInfo)
+
+      res.send(updateDoc) */
+    })
+
     // generate jwt after user logged in
     app.get('/account/:email', async (req, res) => {
       const email = req.params
@@ -113,7 +135,7 @@ async function run() {
     // cancel order if unpaid
     app.delete('/order', verifyJWT, async (req, res) => {
       const id = req.query.id
-      console.log(id)
+      //! console.log(id)
       const query = { _id: ObjectId(id) }
 
       const result = await orderCollection.deleteOne(query)
