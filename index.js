@@ -148,6 +148,13 @@ async function run() {
       res.send(result)
     })
 
+    // add parts to parts collection
+    app.post('/part', verifyJWT, verifyAdmin, async (req, res) => {
+      const product = req.body
+      const result = await partsCollection.insertOne(product)
+      res.send(result)
+    })
+
     // my orders...all the order from a particular user
     app.get('/order', verifyJWT, async (req, res) => {
       const email = req.query.email
@@ -192,15 +199,10 @@ async function run() {
 
     app.get('/admin', verifyJWT, async (req, res) => {
       const email = req.query
-      // console.log(email)
+      //! console.log(email)
       const user = await userCollection.findOne(email)
       res.send({ admin: user?.admin })
     })
-
-    // app.post('/usreProfile', async (req, res) => {
-    //   const info = req.body
-    //   console.log(info)
-    // })
 
     app.put('/userProfile', async (req, res) => {
       const email = req.query
