@@ -106,8 +106,8 @@ async function run() {
 
       const user = await userCollection.findOne({ email: email })
       if (!user) {
-        await userCollection.insertOne(userInfo)
-        await userProfileCollection.insertOne({ email: email, name: name })
+        await userCollection.insertOne(userInfo) // add user to collection while firsttime login or sign in
+        await userProfileCollection.insertOne({ email: email, name: name }) // create user profile while first time login or sign in
       }
 
       res.send({ token })
@@ -115,12 +115,16 @@ async function run() {
 
     //all the parts public api
     app.get('/parts', async (req, res) => {
-      const query = req.query
-      const result = await partsCollection
-        .find(query)
-        .sort({ _id: -1 })
-        .limit(6)
-        .toArray()
+      const amount = Number(req.query.amount)
+
+      const cursor = partsCollection.find({})
+      let result
+      if (amount) {
+        result = await cursor.sort({ _id: -1 }).limit(amount).toArray()
+      } else {
+        result = await cursor.sort({ _id: -1 }).toArray()
+      }
+
       res.send(result)
     })
 
@@ -180,6 +184,11 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/order/all', verifyJWT, verifyAdmin, async (req, res) => {
+      const result = await orderCollection.find({}).toArray()
+      res.send(result)
+    })
+
     // cancel order if unpaid
     app.delete('/order', verifyJWT, async (req, res) => {
       const id = req.query.id
@@ -214,6 +223,7 @@ async function run() {
       res.send(result)
     })
 
+    // check if the user is admin
     app.get('/admin', verifyJWT, async (req, res) => {
       const email = req.query
       //! console.log(email)
@@ -221,6 +231,7 @@ async function run() {
       res.send({ admin: user?.admin })
     })
 
+    // update one user profile...client: my profile
     app.put('/userProfile', async (req, res) => {
       const email = req.query
       const userInfo = req.body
@@ -238,6 +249,7 @@ async function run() {
       res.send(result)
     })
 
+    // find one user profile by email..client: my profile
     app.get('/userProfile/:email', async (req, res) => {
       const email = req.params.email
       //! console.log(email)
