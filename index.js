@@ -116,7 +116,11 @@ async function run() {
     //all the parts public api
     app.get('/parts', async (req, res) => {
       const query = req.query
-      const result = await partsCollection.find(query).toArray()
+      const result = await partsCollection
+        .find(query)
+        .sort({ _id: -1 })
+        .limit(6)
+        .toArray()
       res.send(result)
     })
 
@@ -145,6 +149,19 @@ async function run() {
         $set: updateQuantity,
       }
       const result = await partsCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+    // upload image after the product added to server
+    app.put('/part', verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.query
+      const filter = { _id: ObjectId(id) }
+      const image = req.body
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: image,
+      }
+      const result = await partsCollection.updateOne(filter, updateDoc, options)
       res.send(result)
     })
 
