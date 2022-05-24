@@ -51,6 +51,9 @@ async function run() {
       .db('tsushimaCorporation')
       .collection('payments')
     const userCollection = client.db('tsushimaCorporation').collection('users')
+    const userProfileCollection = client
+      .db('tsushimaCorporation')
+      .collection('userProfiles')
 
     //verify admin
     async function verifyAdmin(req, res, next) {
@@ -104,7 +107,9 @@ async function run() {
       const user = await userCollection.findOne({ email: email })
       if (!user) {
         await userCollection.insertOne(userInfo)
+        await userProfileCollection.insertOne({ email: email, name: name })
       }
+
       res.send({ token })
     })
 
@@ -187,9 +192,38 @@ async function run() {
 
     app.get('/admin', verifyJWT, async (req, res) => {
       const email = req.query
-      console.log(email)
+      // console.log(email)
       const user = await userCollection.findOne(email)
       res.send({ admin: user?.admin })
+    })
+
+    // app.post('/usreProfile', async (req, res) => {
+    //   const info = req.body
+    //   console.log(info)
+    // })
+
+    app.put('/userProfile', async (req, res) => {
+      const email = req.query
+      const userInfo = req.body
+      console.log(email)
+      console.log(userInfo)
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: userInfo,
+      }
+      const result = await userProfileCollection.updateOne(
+        email,
+        updateDoc,
+        options
+      )
+      res.send(result)
+    })
+
+    app.get('/userProfile/:email', async (req, res) => {
+      const email = req.params.email
+      //! console.log(email)
+      const result = await userProfileCollection.findOne({ email: email })
+      res.send(result)
     })
   } finally {
   }
