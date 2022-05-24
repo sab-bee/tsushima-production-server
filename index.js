@@ -169,6 +169,15 @@ async function run() {
       res.send(result)
     })
 
+    // remove product from the stock
+    app.delete('/part', verifyJWT, verifyAdmin, async (req, res) => {
+      const id = req.query
+      console.log(id)
+      const filter = { _id: ObjectId(id) }
+      const result = await partsCollection.deleteOne(filter)
+      res.send(result)
+    })
+
     // add parts to parts collection
     app.post('/part', verifyJWT, verifyAdmin, async (req, res) => {
       const product = req.body
@@ -256,6 +265,11 @@ async function run() {
       const result = await userProfileCollection.findOne({ email: email })
       res.send(result)
     })
+
+    // review section
+    // app.post('/review', async(req, res) => {
+    //   const
+    // })
   } finally {
   }
 }
