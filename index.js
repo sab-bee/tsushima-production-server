@@ -54,6 +54,9 @@ async function run() {
     const userProfileCollection = client
       .db('tsushimaCorporation')
       .collection('userProfiles')
+    const reviewCollection = client
+      .db('tsushimaCorporation')
+      .collection('review')
 
     //verify admin
     async function verifyAdmin(req, res, next) {
@@ -267,9 +270,19 @@ async function run() {
     })
 
     // review section
-    // app.post('/review', async(req, res) => {
-    //   const
-    // })
+    app.post('/review', async (req, res) => {
+      const review = req.body
+      console.log(review)
+      const result = await reviewCollection.insertOne(review)
+      res.send(result)
+    })
+
+    //get review
+    app.get('/review', async (req, res) => {
+      const cursor = reviewCollection.find({})
+      const result = await cursor.sort({ _id: -1 }).toArray()
+      res.send(result)
+    })
   } finally {
   }
 }
