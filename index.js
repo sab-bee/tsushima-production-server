@@ -118,7 +118,7 @@ async function run() {
       const name = req.body.name
 
       const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, {
-        expiresIn: '1h',
+        expiresIn: '1d',
       })
       const userInfo = { email: email, name: name, admin: false }
 
