@@ -97,6 +97,18 @@ async function run() {
       res.send(updateDoc)
     })
 
+    // admin shipped order
+    app.patch('/order/ship', verifyJWT, verifyAdmin, async (req, res) => {
+      const transaction = req.query
+      const updateDoc = {
+        $set: {
+          shipped: true,
+        },
+      }
+      const result = await orderCollection.updateOne(transaction, updateDoc)
+      res.send(result)
+    })
+
     // generate jwt and add user to db after user logged in
     app.post('/account/:email', async (req, res) => {
       const email = req.params.email
