@@ -57,6 +57,9 @@ async function run() {
     const reviewCollection = client
       .db('tsushimaCorporation')
       .collection('review')
+    const premiumCollection = client
+      .db('tsushimaCorporation')
+      .collection('premiumMember')
 
     //verify admin
     async function verifyAdmin(req, res, next) {
@@ -293,6 +296,17 @@ async function run() {
     app.get('/review', async (req, res) => {
       const cursor = reviewCollection.find({})
       const result = await cursor.sort({ _id: -1 }).toArray()
+      res.send(result)
+    })
+
+    //premium members
+    app.post('/premium/:email', verifyJWT, async (req, res) => {
+      const email = req.params
+      const existUser = await userCollection.findOne(email)
+      if (!existUser) return res.status(401).send({ message: 'unauthorized' })
+      const alreadyMemeber = await premiumCollection.findOne(email)
+      if (alreadyMemeber) return res.send({ message: 'exist' })
+      const result = await premiumCollection.insertOne(email)
       res.send(result)
     })
   } finally {
